@@ -1,0 +1,17 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapMod", "MapMod.csproj", "{28ACC4CC-4E64-46D3-9CEB-6CF61D85FB57}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{28ACC4CC-4E64-46D3-9CEB-6CF61D85FB57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28ACC4CC-4E64-46D3-9CEB-6CF61D85FB57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28ACC4CC-4E64-46D3-9CEB-6CF61D85FB57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28ACC4CC-4E64-46D3-9CEB-6CF61D85FB57}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

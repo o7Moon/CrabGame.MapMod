@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>MapMod</AssemblyName>
+    <Description>My first plugin</Description>
+    <Version>1.0.0</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>../BepinEx/core/0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>../Assemblies/Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>../Assemblies/UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>../Assemblies/UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>../Assemblies/UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <PackageReference Include="BepInEx.IL2CPP" Version="6.0.0-*" IncludeAssets="compile" />
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="1.*" />
+    <Reference Include="Il2Cppmscorlib">
+      <HintPath>..\Assemblies\Il2Cppmscorlib.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>..\Bepinex\unhollowed\UnityEngine.UIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>..\Assemblies\UnityEngine.ImageConversionModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>..\Bepinex\unhollowed\UnityEngine.PhysicsModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="objLoader\OBJLoaderHelper.cs" />
+    <Compile Remove="objLoader\OBJObjectBuilder.cs" />
+    <Compile Remove="objLoader\CharWordReader.cs" />
+    <Compile Remove="objLoader\OBJLoader.cs" />
+    <Compile Remove="objLoader\StringExtensions.cs" />
+    <Compile Remove="objLoader\MTLLoader.cs" />
+    <Compile Remove="objLoader\TextureLoader\ColorExtensions.cs" />
+    <Compile Remove="objLoader\TextureLoader\ImageUtils.cs" />
+    <Compile Remove="objLoader\TextureLoader\ImageLoaderHelper.cs" />
+    <Compile Remove="objLoader\TextureLoader\BinaryExtensions.cs" />
+    <Compile Remove="objLoader\TextureLoader\DDSLoader.cs" />
+    <Compile Remove="objLoader\TextureLoader\ImageLoader.cs" />
+    <Compile Remove="objLoader\TextureLoader\BMPLoader.cs" />
+    <Compile Remove="objLoader\TextureLoader\TGALoader.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="objLoader\TextureLoader\DDSLoader.cs.meta" />
+    <None Remove="objLoader\TextureLoader\BinaryExtensions.cs.meta" />
+    <None Remove="objLoader\TextureLoader\ImageUtils.cs.meta" />
+    <None Remove="objLoader\TextureLoader\BMPLoader.cs.meta" />
+    <None Remove="objLoader\TextureLoader\TGALoader.cs.meta" />
+    <None Remove="objLoader\TextureLoader\ImageLoaderHelper.cs.meta" />
+    <None Remove="objLoader\TextureLoader\ImageLoader.cs.meta" />
+    <None Remove="objLoader\TextureLoader\ColorExtensions.cs.meta" />
+  </ItemGroup>
+</Project>
