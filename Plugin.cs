@@ -5,12 +5,27 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using Dummiesman;
+using UnhollowerRuntimeLib;
 
 namespace MapMod
 {
     [BepInPlugin("CrabGameMapMod", "MapMod", "0.1")]
     public class Plugin : BasePlugin
     {
+        // values in object names are formatted valueName[value]
+        public static string tryGetValue(string name,string valueName) {
+            if (!name.Contains(valueName))
+                return null;
+            try
+            {
+                string valueNameWhole = valueName + "[";
+                int valueIndex = name.IndexOf(valueNameWhole) + valueName.Length + 1;
+                int valueEndIndex = name.IndexOf("]", valueIndex);
+                return name.Substring(valueIndex, valueEndIndex - valueIndex);
+            } catch {
+                return null;
+            }
+        }
         public static bool loadingCustomMap = false;
         public static string customMapPath;
         public static void onSceneLoad(Scene scene, LoadSceneMode mode) { 
@@ -21,12 +36,14 @@ namespace MapMod
                 GameObject.Find("/SpawnZoneManager").transform.GetChild(0).GetComponent<MonoBehaviourPublicVesiUnique>().size = new Vector3(2,2,2);
                 GameObject.Destroy(GameObject.Find("/Map"));
                 // load map.obj, the custom OBJLoader will handle things like ladders and tires
-                GameObject Map = new OBJLoader().Load(System.IO.File.Open(customMapPath+"\\map.obj",System.IO.FileMode.Open));
-                Map.transform.Translate(new Vector3(0, -50, 0));
+                bool mtlExists = System.IO.File.Exists(customMapPath+"\\map.mtl");
+                GameObject Map = new OBJLoader().Load(customMapPath+"\\map.obj",mtlExists ? customMapPath+"\\map.mtl" : null);
+                Map.transform.Translate(new Vector3(0, -20, 0));
             }
         }
         public override void Load()
         {
+            ClassInjector.RegisterTypeInIl2Cpp<Spinner>();
             var harmony = new Harmony("MapMod");
             harmony.PatchAll();
             SceneManager.sceneLoaded+=(UnityAction<Scene,LoadSceneMode>)onSceneLoad;
@@ -78,6 +95,17 @@ namespace MapMod
                     setupUI(ref __instance, mapsfolder);
                 }
             }
+        }
+    }
+
+    public class Spinner : MonoBehaviour {
+        public Vector3 axis = new Vector3(0, 1, 0);
+        public int speed = 3;
+
+        public Spinner(System.IntPtr ptr) : base(ptr) { }
+
+        void FixedUpdate() {
+            gameObject.transform.RotateAround(gameObject.GetComponent<Collider>().bounds.center, axis, speed);
         }
     }
 }

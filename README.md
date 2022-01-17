@@ -4,6 +4,9 @@ This is version 0.1 of the custom map loader. Check the [Wiki](https://github.co
 - obj loading
 - ladder placement
 - tire placement
+- "Boom" object placement
+- Spinner Placement
+- Basic custom material support
 ## Planned features
 - Custom Materials
 - Snowball placement

@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using System;
+using MapMod;
 using Dummiesman;
 #if UNITY_EDITOR
 using UnityEditor;
