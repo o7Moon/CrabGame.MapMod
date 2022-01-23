@@ -44,6 +44,9 @@
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>..\Bepinex\unhollowed\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>..\Assemblies\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="objLoader\OBJLoaderHelper.cs" />

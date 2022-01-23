@@ -38,12 +38,12 @@ namespace MapMod
                 // load map.obj, the custom OBJLoader will handle things like ladders and tires
                 bool mtlExists = System.IO.File.Exists(customMapPath+"\\map.mtl");
                 GameObject Map = new OBJLoader().Load(customMapPath+"\\map.obj",mtlExists ? customMapPath+"\\map.mtl" : null);
-                Map.transform.Translate(new Vector3(0, -20, 0));
             }
         }
         public override void Load()
         {
             ClassInjector.RegisterTypeInIl2Cpp<Spinner>();
+            ClassInjector.RegisterTypeInIl2Cpp<Checkpoint>();
             var harmony = new Harmony("MapMod");
             harmony.PatchAll();
             SceneManager.sceneLoaded+=(UnityAction<Scene,LoadSceneMode>)onSceneLoad;
@@ -106,6 +106,18 @@ namespace MapMod
 
         void FixedUpdate() {
             gameObject.transform.RotateAround(gameObject.GetComponent<Collider>().bounds.center, axis, speed);
+        }
+    }
+    public class Checkpoint : MonoBehaviour {
+        void OnCollisionEnter(Collision col) { 
+            // if this collision is the player object
+            if (col.gameObject.GetComponent<MonoBehaviourPublicGaplfoGaTrorplTrRiBoUnique>() != null) {
+                // move the spawnzone to above this checkpoint
+                GameObject spawnZone = GameObject.Find("/SpawnZoneManager").transform.GetChild(0).gameObject;
+                Vector3 pos = GetComponent<MeshCollider>().bounds.center;
+                pos.y += GetComponent<MeshCollider>().bounds.size.y;
+                spawnZone.transform.position = pos;
+            }
         }
     }
 }

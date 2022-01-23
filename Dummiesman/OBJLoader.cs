@@ -273,7 +273,8 @@ namespace Dummiesman
                     continue;
 
                 var builtObj = builder.Value.Build();
-                builtObj.transform.SetParent(obj.transform, false);
+                if (builtObj != null)
+                    builtObj.transform.SetParent(obj.transform, false);
             }
 
             return obj;

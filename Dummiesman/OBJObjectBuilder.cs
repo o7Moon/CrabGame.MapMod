@@ -121,9 +121,24 @@ public class OBJObjectBuilder {
 
 		mf.sharedMesh = msh;
 
+        if (go.name.Contains("spawnzone"))
+        {
+            MonoBehaviourPublicVesiUnique zone = GameObject.Find("/SpawnZoneManager").transform.GetChild(0).gameObject.GetComponent<MonoBehaviourPublicVesiUnique>();
+            Vector3 pos = mr.bounds.center;
+            pos.x *= -1;
+            zone.gameObject.transform.position = pos;
+            zone.size = mr.bounds.size;
+            GameObject.Destroy(go);
+            return null;
+        }
+
             //mr.material.color = new Color(0.3f,0.3f,0.3f,1);
             if (!go.name.Contains("nocol"))
             {
+                if (go.name.Contains("ice1"))
+                    go.tag = "IceButNotThatIcy";
+                if (go.name.Contains("ice2"))
+                    go.tag = "Ice";
                 MeshCollider mcol = go.AddComponent<MeshCollider>();
                 mcol.sharedMesh = msh;
                 go.layer = 6;
@@ -172,11 +187,19 @@ public class OBJObjectBuilder {
                 }
                 if (go.name.Contains("spinner")) {
                     Spinner spinner = go.AddComponent<Spinner>();
-                    string speedValue = Plugin.tryGetValue(go.name, "rot");
+                    string speedValue = Plugin.tryGetValue(go.name, "rspeed");
                     if (speedValue != null)
                         spinner.speed = int.Parse(speedValue);
                 }
+                if (go.name.Contains("checkpoint"))
+                    go.AddComponent<Checkpoint>();
             }
+            string rotValue = Plugin.tryGetValue(go.name,"rot");
+            if (rotValue != null)
+                go.transform.RotateAround(mr.bounds.center,Vector3.up,int.Parse(rotValue));
+        if (go.name.Contains("invis")) {
+            mr.enabled = false;
+        }
         return go;
 	}
 
