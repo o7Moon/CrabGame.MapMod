@@ -106,11 +106,18 @@ public class OBJObjectBuilder {
 		msh.SetVertices(Conversion.ToIl2CppList<Vector3>(_vertices));
 		msh.SetNormals(Conversion.ToIl2CppList<Vector3>(_normals));
 		// msh.SetUVs(0, Conversion.ToIl2CppList<Vector2>(_uvs));
+        if (go.name.Contains("textured") || Plugin.allObjectsTextured) {
+            Vector2[] uvs = new Vector2[_uvs.Count];
+            for(int i = 0; i < _uvs.Count; i++) {
+                uvs[i] = _uvs[i];
+            }
+            msh.uv = uvs;
+        }
 
-		//set faces
-		foreach (var kvp in _materialIndices) {
-			msh.SetTriangles(Conversion.ToIl2CppList<int>(kvp.Value), submesh);
-			submesh++;
+        //set faces
+        foreach (var kvp in _materialIndices) {
+		msh.SetTriangles(Conversion.ToIl2CppList<int>(kvp.Value), submesh);
+		submesh++;
 		}
 
 		//recalculations
@@ -131,7 +138,6 @@ public class OBJObjectBuilder {
             GameObject.Destroy(go);
             return null;
         }
-
             //mr.material.color = new Color(0.3f,0.3f,0.3f,1);
             if (!go.name.Contains("nocol"))
             {
@@ -197,7 +203,15 @@ public class OBJObjectBuilder {
             string rotValue = Plugin.tryGetValue(go.name,"rot");
             if (rotValue != null)
                 go.transform.RotateAround(mr.bounds.center,Vector3.up,int.Parse(rotValue));
-        if (go.name.Contains("invis")) {
+            if (go.name.Contains("safezone"))
+            {
+                MonoBehaviourPublicLi1ObsaInObUnique script1 = go.AddComponent<MonoBehaviourPublicLi1ObsaInObUnique>();
+                MonoBehaviourPublicVoCoOnVoCoVoCoVoCoVo1 script2 = go.AddComponent<MonoBehaviourPublicVoCoOnVoCoVoCoVoCoVo1>();
+                go.GetComponent<MeshCollider>().convex = true;
+                go.GetComponent<MeshCollider>().isTrigger = true;
+                go.layer = 13;
+            }
+            if (go.name.Contains("invis")) {
             mr.enabled = false;
         }
         return go;
