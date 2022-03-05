@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace MapMod
 {
-    [BepInPlugin("CrabGameMapMod", "MapMod", "0.4")]
+    [BepInPlugin("CrabGameMapMod", "MapMod", "0.5")]
     public class Plugin : BasePlugin
     {
         // values in object names are formatted valueName[value]
@@ -26,6 +26,12 @@ namespace MapMod
             } catch {
                 return null;
             }
+        }
+        public static Vector3 parseVector(string text) {
+            string[] array = text.Split(",");
+            if (array.Length == 3) {
+                return new Vector3(float.Parse(array[0]), float.Parse(array[1]), float.Parse(array[2]));
+            } else { return new Vector3(0,1,0); }
         }
         public static string[] getCustomMapNames() {
             string path = System.IO.Directory.GetParent(Application.dataPath) + "\\Maps.txt";
@@ -103,6 +109,10 @@ namespace MapMod
         public static bool allObjectsTextured = false;
         public static bool gameLoaded = false;
         public static string customMapPath;
+        public static System.Collections.Generic.List<System.Func<GameObject,Mesh,bool>> mapLoaderActions = new System.Collections.Generic.List<System.Func<GameObject, Mesh, bool>>();
+        public static void registerLoaderAction(System.Func<GameObject,Mesh,bool> action) {
+            mapLoaderActions.Add(action);
+        }
         public static void onSceneLoad(Scene scene, LoadSceneMode mode) { 
             if (!gameLoaded) {
                 gameLoaded = true;
@@ -131,6 +141,7 @@ namespace MapMod
         {
             ClassInjector.RegisterTypeInIl2Cpp<Spinner>();
             ClassInjector.RegisterTypeInIl2Cpp<Checkpoint>();
+            registerLoaderAction(defaultLoaderActions);
             var harmony = new Harmony("MapMod");
             harmony.PatchAll();
             SceneManager.sceneLoaded+=(UnityAction<Scene,LoadSceneMode>)onSceneLoad;
@@ -183,6 +194,108 @@ namespace MapMod
                 }
             }
         }
+        public static bool defaultLoaderActions(GameObject go, Mesh msh) {
+            MeshFilter mf = go.GetComponent<MeshFilter>();
+            MeshRenderer mr = go.GetComponent<MeshRenderer>();
+            if (go.name.Contains("pixel")) {
+                mr.material.mainTexture.filterMode = FilterMode.Point;
+            }
+            if (go.name.Contains("spawnzone"))
+            {
+                MonoBehaviourPublicVesiUnique zone = GameObject.Find("/SpawnZoneManager").transform.GetChild(0).gameObject.GetComponent<MonoBehaviourPublicVesiUnique>();
+                Vector3 pos = mr.bounds.center;
+                pos.x *= -1;
+                zone.gameObject.transform.position = pos;
+                zone.size = mr.bounds.size;
+                GameObject.Destroy(go);
+                return false;
+            }
+            if (!go.name.Contains("nocol"))
+            {
+                if (go.name.Contains("ice1"))
+                    go.tag = "IceButNotThatIcy";
+                if (go.name.Contains("ice2"))
+                    go.tag = "Ice";
+                MeshCollider mcol = go.AddComponent<MeshCollider>();
+                mcol.sharedMesh = msh;
+                go.layer = 6;
+                if (go.name.Contains("ladder"))
+                {
+                    if (go.name.Contains("flip"))
+                    {
+                        go.transform.RotateAround(mcol.bounds.center, Vector3.up, 180);
+                    }
+                    if (go.name.Contains("rot90"))
+                    {
+                        go.transform.RotateAround(mcol.bounds.center, Vector3.up, 90);
+                    }
+                    go.layer = 14;
+                    go.AddComponent<MonoBehaviourPublicLi1CoonUnique>();
+                    mcol.convex = true;
+                    mcol.isTrigger = true;
+                }
+                if (go.name.Contains("tire"))
+                {
+                    go.layer = 14;
+                    mcol.convex = true;
+                    mcol.isTrigger = true;
+                    MonoBehaviourPublicSiBopuSiUnique tireScript = go.AddComponent<MonoBehaviourPublicSiBopuSiUnique>();
+                    tireScript.field_Private_Boolean_0 = true;
+                    tireScript.field_Private_Single_0 = 0.25f;
+                    tireScript.pushForce = 35;
+                    string forceValue = Plugin.tryGetValue(go.name, "tforce");
+                    if (forceValue != null)
+                        tireScript.pushForce = int.Parse(forceValue);
+                }
+                if (go.name.Contains("boom"))
+                {
+                    MonoBehaviourPublicSicofoSimuupInSiboVeUnique script = go.AddComponent<MonoBehaviourPublicSicofoSimuupInSiboVeUnique>();
+                    script.force = 40;
+                    script.upForce = 15;
+                    script.field_Private_Boolean_0 = true;
+                    script.cooldown = 0.5f;
+                    string forceValue = Plugin.tryGetValue(go.name, "bforce");
+                    if (forceValue != null)
+                        script.force = int.Parse(forceValue);
+                    string upForceValue = Plugin.tryGetValue(go.name, "upforce");
+                    if (upForceValue != null)
+                        script.upForce = int.Parse(upForceValue);
+                }
+                if (go.name.Contains("spinner"))
+                {
+                    Rigidbody rb = go.AddComponent<Rigidbody>();
+                    //rb.centerOfMass = mcol.bounds.center;
+                    rb.isKinematic = true;
+                    Spinner spinner = go.AddComponent<Spinner>();
+                    string speedValue = Plugin.tryGetValue(go.name, "rspeed");
+                    if (speedValue != null)
+                        spinner.speed = float.Parse(speedValue);
+                    string axisValue = Plugin.tryGetValue(go.name, "raxis");
+                    if (axisValue != null) {
+                        Vector3 axisVector = parseVector(axisValue);
+                        spinner.axis = axisVector.normalized;
+                    }
+                }
+                if (go.name.Contains("checkpoint"))
+                    go.AddComponent<Checkpoint>();
+            }
+            string rotValue = Plugin.tryGetValue(go.name, "rot");
+            if (rotValue != null)
+                go.transform.RotateAround(mr.bounds.center, Vector3.up, int.Parse(rotValue));
+            if (go.name.Contains("safezone"))
+            {
+                MonoBehaviourPublicLi1ObsaInObUnique script1 = go.AddComponent<MonoBehaviourPublicLi1ObsaInObUnique>();
+                MonoBehaviourPublicVoCoOnVoCoVoCoVoCoVo1 script2 = go.AddComponent<MonoBehaviourPublicVoCoOnVoCoVoCoVoCoVo1>();
+                go.GetComponent<MeshCollider>().convex = true;
+                go.GetComponent<MeshCollider>().isTrigger = true;
+                go.layer = 13;
+            }
+            if (go.name.Contains("invis"))
+            {
+                mr.enabled = false;
+            }
+            return true;
+        }
     }
 
     [HarmonyPatch(typeof(MonoBehaviourPublicObInMamaLi1plMadeMaUnique), "GetMap")]
@@ -208,18 +321,25 @@ namespace MapMod
 
     public class Spinner : MonoBehaviour {
         public Vector3 axis = new Vector3(0, 1, 0);
-        public int speed = 3;
+        public float speed = 3;
 
         public Spinner(System.IntPtr ptr) : base(ptr) { }
 
         void FixedUpdate() {
-            gameObject.transform.RotateAround(gameObject.GetComponent<Collider>().bounds.center, axis, speed);
+            Rigidbody rb = gameObject.GetComponent<Rigidbody>();
+            Vector3 center = gameObject.GetComponent<MeshCollider>().bounds.center;
+            Quaternion q = Quaternion.AxisAngle(axis,speed*0.03f);
+            rb.MovePosition(q*(rb.transform.position-center)+center);
+            rb.MoveRotation(q*rb.transform.rotation);
         }
     }
-    public class Checkpoint : MonoBehaviour {
-        void OnCollisionEnter(Collision col) { 
+    public class Checkpoint : MonoBehaviour
+    {
+        void OnCollisionEnter(Collision col)
+        {
             // if this collision is the player object
-            if (col.gameObject.GetComponent<MonoBehaviourPublicGaplfoGaTrorplTrRiBoUnique>() != null) {
+            if (col.gameObject.GetComponent<MonoBehaviourPublicGaplfoGaTrorplTrRiBoUnique>() != null)
+            {
                 // move the spawnzone to above this checkpoint
                 GameObject spawnZone = GameObject.Find("/SpawnZoneManager").transform.GetChild(0).gameObject;
                 Vector3 pos = GetComponent<MeshCollider>().bounds.center;

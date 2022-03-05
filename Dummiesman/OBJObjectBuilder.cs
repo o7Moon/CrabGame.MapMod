@@ -128,91 +128,10 @@ public class OBJObjectBuilder {
 
 		mf.sharedMesh = msh;
 
-        if (go.name.Contains("spawnzone"))
-        {
-            MonoBehaviourPublicVesiUnique zone = GameObject.Find("/SpawnZoneManager").transform.GetChild(0).gameObject.GetComponent<MonoBehaviourPublicVesiUnique>();
-            Vector3 pos = mr.bounds.center;
-            pos.x *= -1;
-            zone.gameObject.transform.position = pos;
-            zone.size = mr.bounds.size;
-            GameObject.Destroy(go);
-            return null;
-        }
-            //mr.material.color = new Color(0.3f,0.3f,0.3f,1);
-            if (!go.name.Contains("nocol"))
-            {
-                if (go.name.Contains("ice1"))
-                    go.tag = "IceButNotThatIcy";
-                if (go.name.Contains("ice2"))
-                    go.tag = "Ice";
-                MeshCollider mcol = go.AddComponent<MeshCollider>();
-                mcol.sharedMesh = msh;
-                go.layer = 6;
-                if (go.name.Contains("ladder"))
-                {
-                    if (go.name.Contains("flip"))
-                    {
-                        go.transform.RotateAround(mcol.bounds.center, Vector3.up, 180);
-                    }
-                    if (go.name.Contains("rot90"))
-                    {
-                        go.transform.RotateAround(mcol.bounds.center, Vector3.up, 90);
-                    }
-                    go.layer = 14;
-                    go.AddComponent<MonoBehaviourPublicLi1CoonUnique>();
-                    //mr.material.color = new Color(1f, 0.5f, 0.0f, 1);
-                    mcol.convex = true;
-                    mcol.isTrigger = true;
-                }
-                if (go.name.Contains("tire"))
-                {
-                    go.layer = 14;
-                    mcol.convex = true;
-                    mcol.isTrigger = true;
-                    MonoBehaviourPublicSiBopuSiUnique tireScript = go.AddComponent<MonoBehaviourPublicSiBopuSiUnique>();
-                    tireScript.field_Private_Boolean_0 = true;
-                    tireScript.field_Private_Single_0 = 0.25f;
-                    tireScript.pushForce = 35;
-                    string forceValue = Plugin.tryGetValue(go.name, "tforce");
-                    if (forceValue != null)
-                        tireScript.pushForce = int.Parse(forceValue);
-                    //mr.material.color = new Color(0f,0f,0f,1f);
-                }
-                if (go.name.Contains("boom")) {
-                    MonoBehaviourPublicSicofoSimuupInSiboVeUnique script = go.AddComponent<MonoBehaviourPublicSicofoSimuupInSiboVeUnique>();
-                    script.force = 40;
-                    script.upForce = 15;
-                    script.field_Private_Boolean_0 = true;
-                    script.cooldown = 0.5f;
-                    string forceValue = Plugin.tryGetValue(go.name,"bforce");
-                    if (forceValue != null)
-                        script.force = int.Parse(forceValue);
-                    string upForceValue = Plugin.tryGetValue(go.name, "upforce");
-                    if (upForceValue != null)
-                        script.upForce = int.Parse(upForceValue);
-                }
-                if (go.name.Contains("spinner")) {
-                    Spinner spinner = go.AddComponent<Spinner>();
-                    string speedValue = Plugin.tryGetValue(go.name, "rspeed");
-                    if (speedValue != null)
-                        spinner.speed = int.Parse(speedValue);
-                }
-                if (go.name.Contains("checkpoint"))
-                    go.AddComponent<Checkpoint>();
+        foreach (System.Func<GameObject,Mesh,bool> fn in MapMod.Plugin.mapLoaderActions) { 
+            if (!fn(go,msh)) {
+                return null;
             }
-            string rotValue = Plugin.tryGetValue(go.name,"rot");
-            if (rotValue != null)
-                go.transform.RotateAround(mr.bounds.center,Vector3.up,int.Parse(rotValue));
-            if (go.name.Contains("safezone"))
-            {
-                MonoBehaviourPublicLi1ObsaInObUnique script1 = go.AddComponent<MonoBehaviourPublicLi1ObsaInObUnique>();
-                MonoBehaviourPublicVoCoOnVoCoVoCoVoCoVo1 script2 = go.AddComponent<MonoBehaviourPublicVoCoOnVoCoVoCoVoCoVo1>();
-                go.GetComponent<MeshCollider>().convex = true;
-                go.GetComponent<MeshCollider>().isTrigger = true;
-                go.layer = 13;
-            }
-            if (go.name.Contains("invis")) {
-            mr.enabled = false;
         }
         return go;
 	}
