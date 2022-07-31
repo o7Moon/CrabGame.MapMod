@@ -7,6 +7,9 @@ using UnityEngine.SceneManagement;
 using Dummiesman;
 using UnhollowerRuntimeLib;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Net.Http;
+using System.IO.Compression;
 
 namespace MapMod
 {
@@ -34,15 +37,30 @@ namespace MapMod
             } else { return new Vector3(0,1,0); }
         }
         public static string[] getCustomMapNames() {
+            /*if (!System.IO.File.Exists(Application.dataPath+"\\localindex")){
+                instance.Log.LogInfo("file doesnt exist ??");
+            }
+            return new string[0];*/
+            string[] lines = System.IO.File.ReadAllLines(Application.dataPath+"\\localindex");
+            System.Collections.Generic.List<string> maps = new System.Collections.Generic.List<string>();
+            for (int i = 0; i < lines.Length; i++){
+                if (lines[i].IsNullOrWhiteSpace()) continue;
+                string name = lines[i].Split("|")[1].Trim('\r','\n');
+                if (System.String.IsNullOrEmpty(name)) continue;
+                maps.Add(name);
+            }
+            return maps.ToArray();
+            /* old Maps.txt system
+               replaced by map index
             string path = System.IO.Directory.GetParent(Application.dataPath) + "\\Maps.txt";
             if (!System.IO.File.Exists(path)) {
                 System.IO.File.WriteAllText(path," ");
                 return null;
             }
-            return System.IO.File.ReadAllLines(path);
+            return System.IO.File.ReadAllLines(path);*/
         }
         public static void registerMaps() {
-            string[] mapList = getCustomMapNames();
+            string[] mapList = getCustomMapNames();;
             string mapsFolder = System.IO.Directory.GetParent(Application.dataPath) + "\\Maps";
             if (!System.IO.Directory.Exists(mapsFolder)) {
                 System.IO.Directory.CreateDirectory(mapsFolder);
@@ -63,7 +81,7 @@ namespace MapMod
                 map.id = mapNum;
                 mapNum++;
                 string mapFolder = mapsFolder + "\\" + name;
-                Texture2D thumbnail = new Texture2D(1, 1);
+                Texture2D thumbnail = new Texture2D(1,1);
                 if (System.IO.File.Exists(mapFolder + "\\map.png")) {
                     ImageConversion.LoadImage(thumbnail,System.IO.File.ReadAllBytes(mapFolder+"\\map.png"));
                 }
@@ -109,6 +127,12 @@ namespace MapMod
         public static bool allObjectsTextured = false;
         public static bool gameLoaded = false;
         public static string customMapPath;
+
+        const string indexfileURL = "https://raw.githubusercontent.com/o7Moon/CrabGame.MapMod/main/index/indexfile";
+
+        const string mapIndexDirectory = "https://github.com/o7Moon/CrabGame.MapMod/raw/main/index/maps/";
+
+        public static System.Collections.Generic.List<bool> mapsNeedUpdating = new System.Collections.Generic.List<bool>();
         public static System.Collections.Generic.List<System.Func<GameObject,Mesh,bool>> mapLoaderActions = new System.Collections.Generic.List<System.Func<GameObject, Mesh, bool>>();
         public static void registerLoaderAction(System.Func<GameObject,Mesh,bool> action) {
             mapLoaderActions.Add(action);
@@ -116,6 +140,7 @@ namespace MapMod
         public static void onSceneLoad(Scene scene, LoadSceneMode mode) { 
             if (!gameLoaded) {
                 gameLoaded = true;
+                checkIndex().Wait();
                 registerMaps();
             }
             // once we load a scene, if this load was caused by pressing a custom map button then delete the default map and add our own
@@ -124,6 +149,7 @@ namespace MapMod
                 // make spawning consistent
                 GameObject.Find("/SpawnZoneManager").transform.GetChild(0).GetComponent<MonoBehaviourPublicVesiUnique>().size = new Vector3(2,2,2);
                 GameObject.Destroy(GameObject.Find("/Map"));
+                GameObject.Destroy(GameObject.Find("===AMBIENCE==="));
                 string mapConfigPath = customMapPath + "\\map.config";
                 if (System.IO.File.Exists(mapConfigPath))
                 {
@@ -137,8 +163,11 @@ namespace MapMod
                 GameObject Map = new OBJLoader().Load(customMapPath+"\\map.obj",mtlExists ? customMapPath+"\\map.mtl" : null);
             }
         }
+
+        public static Plugin instance;
         public override void Load()
         {
+            instance = this;
             ClassInjector.RegisterTypeInIl2Cpp<Spinner>();
             ClassInjector.RegisterTypeInIl2Cpp<Checkpoint>();
             registerLoaderAction(defaultLoaderActions);
@@ -296,6 +325,43 @@ namespace MapMod
             }
             return true;
         }
+        public static async Task checkIndex(){
+            string filecontent;
+            HttpClient client = new HttpClient();
+            filecontent = await client.GetStringAsync(indexfileURL);
+            string localIndexPath = Application.dataPath+"\\localindex";
+            string[] newIndex = filecontent.Split("\n");
+            if (System.IO.File.Exists(localIndexPath)){
+                string[] localIndex = System.IO.File.ReadAllLines(localIndexPath);
+                for (int ID = 0; ID < localIndex.Length; ID++){
+                    string localVersionID = localIndex[ID].Split("|")[0];
+                    string newVersionID = newIndex[ID].Split("|")[0];
+                    mapsNeedUpdating.Add(localVersionID == newVersionID);
+                }
+                for (int i = 0; i < newIndex.Length-localIndex.Length; i++){
+                    mapsNeedUpdating.Add(true);
+                }
+            } else {
+                int mapCount = filecontent.Count(ch => (ch == '\n'));
+                for (int i = 0; i < mapCount; i++){
+                    mapsNeedUpdating.Add(true);
+                }
+            }
+            System.IO.File.WriteAllLines(Application.dataPath+"\\localIndex",newIndex);
+        }
+        public static async Task updateMap(int ID){
+            string mapIndexEntry = System.IO.File.ReadAllLines(Application.dataPath+"\\localIndex")[ID];
+            string mapname = mapIndexEntry.Split("|")[1];
+            HttpClient client = new HttpClient();
+            System.IO.Stream mapStream = await client.GetStreamAsync(mapIndexDirectory+mapname+".zip");
+            ZipArchive zip = new ZipArchive(mapStream);
+            string mapPath = System.IO.Directory.GetParent(Application.dataPath) + "\\Maps\\" +mapname+"\\";
+            foreach (ZipArchiveEntry entry in zip.Entries){
+                entry.ExtractToFile(mapPath+entry.Name,true);
+            }
+            zip.Dispose();
+            mapsNeedUpdating[ID] = false;
+        }
     }
 
     [HarmonyPatch(typeof(MonoBehaviourPublicObInMamaLi1plMadeMaUnique), "GetMap")]
@@ -308,6 +374,10 @@ namespace MapMod
         public static void getMapHook(ref Map __result,MonoBehaviourPublicObInMamaLi1plMadeMaUnique __instance, int __state) {
             if (__state > 61) {
                 string mapPath = System.IO.Directory.GetParent(Application.dataPath) + "\\Maps\\"+__result.mapName;
+                int customID = __state - 62;
+                if (Plugin.mapsNeedUpdating[customID]){
+                    Plugin.updateMap(customID).Wait();
+                }
                 if (System.IO.Directory.Exists(mapPath)) {
                     __result = __instance.GetMap(52);
                     Plugin.loadingCustomMap = true;
