@@ -10,10 +10,10 @@ namespace Dummiesman
         /// </summary>
         public static void EnableMaterialTransparency(Material mtl)
         {
-            mtl.SetFloat("_Mode", 3f);
+            //mtl.SetFloat("_Mode", 3f);
             mtl.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
             mtl.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            mtl.SetInt("_ZWrite", 0);
+            //mtl.SetInt("_ZWrite", 0); 
             mtl.DisableKeyword("_ALPHATEST_ON");
             mtl.EnableKeyword("_ALPHABLEND_ON");
             mtl.DisableKeyword("_ALPHAPREMULTIPLY_ON");
