@@ -10,18 +10,107 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.IO.Compression;
+using System.IO;
 
 namespace MapMod
 {
-    [BepInPlugin("CrabGameMapMod", "MapMod", "0.5")]
+    [BepInPlugin("CrabGameMapMod", "MapMod", "0.6")]
     public class Plugin : BasePlugin
     {
+        public static void Setup(){
+            string mapsFolder = System.IO.Directory.GetParent(Application.dataPath) + "\\Maps";
+            if (!System.IO.Directory.Exists(mapsFolder)) {
+                System.IO.Directory.CreateDirectory(mapsFolder);
+            }
+            gameFolder = System.IO.Directory.GetParent(Application.dataPath).FullName;
+            string hostindexConfigPath = gameFolder+"\\hostindex.txt";
+            if (File.Exists(hostindexConfigPath)){
+                hostIndex = File.ReadAllText(hostindexConfigPath).Trim();
+            } else {
+                File.WriteAllText(hostindexConfigPath,"useLocal");
+            }
+            indexUrl = hostIndex;
+            steamManager = GameObject.Find("/Managers/SteamManager").GetComponent<MonoBehaviourPublicObInUIgaStCSBoStcuCSUnique>();
+            hostID = steamManager.prop_CSteamID_0;
+            mapManager = GameObject.Find("/Managers/Map&GameModes").GetComponent<MonoBehaviourPublicObInMamaLi1plMadeMaUnique>();
+            gamemodeManager = GameObject.Find("/Managers/Map&GameModes").GetComponent<MonoBehaviourPublicGadealGaLi1pralObInUnique>();
+            defaultMaps = mapManager.maps.ToList();
+            updateIndex().Wait();
+            registerMaps();
+            mapManager.playableMaps = new Il2CppSystem.Collections.Generic.List<Map>();
+        }
+        public static void registerMaps(){
+            var mapList = new System.Collections.Generic.List<Map>(defaultMaps);
+            int mapnum = 62;
+            foreach (Map m in customMaps){
+                m.id = mapnum;
+                string mapfolder = currentIndexFolderPath + m.name;
+                Texture2D thumbnail = new Texture2D(1,1);
+                if (System.IO.File.Exists(mapfolder+"\\map.png")){
+                    ImageConversion.LoadImage(thumbnail,System.IO.File.ReadAllBytes(mapfolder+"\\map.png"));
+                }
+                m.mapThumbnail = thumbnail;
+                if (System.IO.File.Exists(mapfolder+"\\map.config")){
+                    string config = System.IO.File.ReadAllText(mapfolder+"\\map.config");
+                    string size = tryGetValue(config,"size");
+                    if (size != null){
+                        switch (size) { 
+                            case "large":
+                                m.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.large;
+                                break;
+                            case "medium":
+                                m.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.medium;
+                                break;
+                            case "small":
+                                m.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.small;
+                                break;
+                            default:
+                                m.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.any;
+                                break;
+                        } 
+                    } else {
+                        m.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.any;
+                    }
+                }
+                mapnum ++;
+                mapList.Add(m);
+                // this will ONLY happen on first map register, with the host index. 
+                // when playing as a client it is not required to have the correct supoported maps list
+                // since the host handles it. because of that its possible to just add these once for the host index
+                // and never reset them.
+                if (!addedGamemodeSupportedMaps){
+                    registerGamemodeSupportedMap(m);
+                }
+            }
+            mapManager.maps = mapList.ToArray();
+            addedGamemodeSupportedMaps = true;
+        }
+        public static void registerGamemodeSupportedMap(Map m){
+            string mapfolder = currentIndexFolderPath + m.name;
+            if (System.IO.File.Exists(mapfolder+"\\map.config")){
+                string[] gamemodes = new string[gamemodeManager.allGameModes.Length];
+                for (int i = 0; i < gamemodeManager.allGameModes.Length; i++) {
+                    gamemodes[i] = gamemodeManager.allGameModes[i].modeName.ToLower();
+                }
+                string config = System.IO.File.ReadAllText(mapfolder+"\\map.config");
+                string mapModes = tryGetValue(config, "modes");
+                if (mapModes != null)
+                {
+                    for (int i = 0; i < gamemodes.Length; i++)
+                    {
+                        string mode = gamemodes[i];
+                        if (mapModes.Contains(mode)) {
+                            gamemodeManager.allGameModes[i].compatibleMaps = gamemodeManager.allGameModes[i].compatibleMaps.AddItem(m).ToArray();
+                        }
+                    }
+                }
+            }
+        }
         // values in object names are formatted valueName[value]
         public static string tryGetValue(string name,string valueName) {
             if (!name.Contains(valueName))
                 return null;
-            try
-            {
+            try {
                 string valueNameWhole = valueName + "[";
                 int valueIndex = name.IndexOf(valueNameWhole) + valueName.Length + 1;
                 int valueEndIndex = name.IndexOf("]", valueIndex);
@@ -37,100 +126,39 @@ namespace MapMod
             } else { return new Vector3(0,1,0); }
         }
         public static string[] getCustomMapNames() {
-            /*if (!System.IO.File.Exists(Application.dataPath+"\\localindex")){
-                instance.Log.LogInfo("file doesnt exist ??");
-            }
-            return new string[0];*/
-            string[] lines = System.IO.File.ReadAllLines(Application.dataPath+"\\localindex");
-            System.Collections.Generic.List<string> maps = new System.Collections.Generic.List<string>();
-            for (int i = 0; i < lines.Length; i++){
-                if (lines[i].IsNullOrWhiteSpace()) continue;
-                string name = lines[i].Split("|")[1].Trim('\r','\n');
-                if (System.String.IsNullOrEmpty(name)) continue;
-                maps.Add(name);
-            }
-            return maps.ToArray();
-            /* old Maps.txt system
-               replaced by map index
+            // this is only used when the index is set to "useLocal"
             string path = System.IO.Directory.GetParent(Application.dataPath) + "\\Maps.txt";
             if (!System.IO.File.Exists(path)) {
                 System.IO.File.WriteAllText(path," ");
                 return null;
             }
-            return System.IO.File.ReadAllLines(path);*/
+            return System.IO.File.ReadAllLines(path);
         }
-        public static void registerMaps() {
-            string[] mapList = getCustomMapNames();;
-            string mapsFolder = System.IO.Directory.GetParent(Application.dataPath) + "\\Maps";
-            if (!System.IO.Directory.Exists(mapsFolder)) {
-                System.IO.Directory.CreateDirectory(mapsFolder);
-            }
-            GameObject mapManager = GameObject.Find("/Managers/Map&GameModes");
-            MonoBehaviourPublicObInMamaLi1plMadeMaUnique mapScript = mapManager.GetComponent<MonoBehaviourPublicObInMamaLi1plMadeMaUnique>();
-            MonoBehaviourPublicGadealGaLi1pralObInUnique gamemodeScript = mapManager.GetComponent<MonoBehaviourPublicGadealGaLi1pralObInUnique>();
-
-            string[] gamemodes = new string[gamemodeScript.allGameModes.Length];
-            for (int i = 0; i < gamemodeScript.allGameModes.Length; i++) {
-                gamemodes[i] = gamemodeScript.allGameModes[i].modeName.ToLower();
-            }
-            int mapNum = 62;
-            foreach (string name in mapList) {
-                Map map = ScriptableObject.CreateInstance<Map>();
-                map.name = name;
-                map.mapName = name;
-                map.id = mapNum;
-                mapNum++;
-                string mapFolder = mapsFolder + "\\" + name;
-                Texture2D thumbnail = new Texture2D(1,1);
-                if (System.IO.File.Exists(mapFolder + "\\map.png")) {
-                    ImageConversion.LoadImage(thumbnail,System.IO.File.ReadAllBytes(mapFolder+"\\map.png"));
-                }
-                map.mapThumbnail = thumbnail;
-                if (System.IO.File.Exists(mapFolder + "\\map.config")) {
-                    string config = System.IO.File.ReadAllText(mapFolder+"\\map.config");
-                    string mapSize = tryGetValue(config,"size");
-                    if (mapSize != null) { 
-                        switch (mapSize) { 
-                            case "large":
-                                map.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.large;
-                                break;
-                            case "medium":
-                                map.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.medium;
-                                break;
-                            case "small":
-                                map.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.small;
-                                break;
-                            default:
-                                map.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.any;
-                                break;
-                        }
-                    } else {
-                        map.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.any;
-                    }
-                    string mapModes = tryGetValue(config,"modes");
-                    if (mapModes != null)
-                    {
-                        for (int i = 0; i < gamemodes.Length; i++)
-                        {
-                            string mode = gamemodes[i];
-                            if (mapModes.Contains(mode)) {
-                                gamemodeScript.allGameModes[i].compatibleMaps = gamemodeScript.allGameModes[i].compatibleMaps.AddItem(map).ToArray();
-                            }
-                        }
-                    }
-                }
-                mapScript.maps = mapScript.maps.AddItem(map).ToArray();
-                mapScript.playableMaps = new Il2CppSystem.Collections.Generic.List<Map>();
-            }
+        public static Map createMap(string name){
+            Map map = ScriptableObject.CreateInstance<Map>();
+            map.name = name;
+            map.mapName = name;
+            return map;
         }
         public static bool loadingCustomMap = false;
         public static bool allObjectsTextured = false;
         public static bool gameLoaded = false;
+        public static bool addedGamemodeSupportedMaps = false;
         public static string customMapPath;
+        public static string gameFolder;
+        // the index url to use when hosting a game. this is configured in (Game Folder/hostindex.txt)
+        // if it is set to "useLocal", use Maps.txt and the maps folder instead of an index repo.
+        // note that this means clients will also use their own maps
+        public static string hostIndex = "useLocal";
+        public static SteamworksNative.CSteamID hostID = (SteamworksNative.CSteamID)0;
+        public static MonoBehaviourPublicObInUIgaStCSBoStcuCSUnique steamManager;
+        public static MonoBehaviourPublicObInMamaLi1plMadeMaUnique mapManager;
+        public static MonoBehaviourPublicGadealGaLi1pralObInUnique gamemodeManager;
+        public static System.Collections.Generic.List<Map> defaultMaps;
+        public static System.Collections.Generic.List<Map> customMaps;
+        public static string indexUrl; // eg: https://github.com/o7Moon/CrabGame.MapMod/raw/main/index/ and indexfile and maps/ should exist at this url
 
-        const string indexfileURL = "https://raw.githubusercontent.com/o7Moon/CrabGame.MapMod/main/index/indexfile";
-
-        const string mapIndexDirectory = "https://github.com/o7Moon/CrabGame.MapMod/raw/main/index/maps/";
+        public static string currentIndexFolderPath;
 
         public static System.Collections.Generic.List<bool> mapsNeedUpdating = new System.Collections.Generic.List<bool>();
         public static System.Collections.Generic.List<System.Func<GameObject,Mesh,bool>> mapLoaderActions = new System.Collections.Generic.List<System.Func<GameObject, Mesh, bool>>();
@@ -140,8 +168,7 @@ namespace MapMod
         public static void onSceneLoad(Scene scene, LoadSceneMode mode) { 
             if (!gameLoaded) {
                 gameLoaded = true;
-                checkIndex().Wait();
-                registerMaps();
+                Setup();
             }
             // once we load a scene, if this load was caused by pressing a custom map button then delete the default map and add our own
             if (loadingCustomMap && scene.name != "LoadingScreen") {
@@ -157,6 +184,22 @@ namespace MapMod
                     allObjectsTextured = false;
                     if (config.Contains("allObjectsTextured"))
                         allObjectsTextured = true;
+                    string lightIntensity = tryGetValue(config, "lightingIntensity");
+                    if (lightIntensity != null) {
+                        Light light = GameObject.Find("Directional Light").GetComponent<Light>();
+                        light.intensity = float.Parse(lightIntensity);
+                    }
+                }
+                GameObject.Destroy(GameObject.Find("Cube"));
+                GameObject.Destroy(GameObject.Find("RoundTimer"));
+                if (System.IO.File.Exists(customMapPath + "\\sky.png")) {
+                    Texture2D skyTexture = new Texture2D(1,1);
+                    ImageConversion.LoadImage(skyTexture, System.IO.File.ReadAllBytes(customMapPath + "\\sky.png"));
+                    Material sky = RenderSettings.skybox;
+                    sky.shader = Shader.Find("Skybox/Panoramic");
+                    sky.SetTexture("Spherical",skyTexture);
+                    sky.mainTexture = skyTexture;
+                    RenderSettings.skybox = sky;
                 }
                 // load map.obj, the custom OBJLoader will handle things like ladders and tires
                 bool mtlExists = System.IO.File.Exists(customMapPath+"\\map.mtl");
@@ -175,6 +218,28 @@ namespace MapMod
             harmony.PatchAll();
             SceneManager.sceneLoaded+=(UnityAction<Scene,LoadSceneMode>)onSceneLoad;
             Log.LogInfo("MapMod is loaded!");
+        }
+        [HarmonyPatch(typeof(SteamworksNative.SteamMatchmaking))]
+        [HarmonyPatch(nameof(SteamworksNative.SteamMatchmaking.SetLobbyData))]
+        static class SetLobbyDataPatch {
+            public static void Prefix(SteamworksNative.CSteamID steamIDLobby,string pchKey,string pchValue){
+                // add in our own lobby data whenever the version gets set (which happens once when creating a lobby)
+                if (pchKey == "Version"){
+                    SteamworksNative.SteamMatchmaking.SetLobbyData(steamIDLobby, "indexUrl", hostIndex);
+                }
+            }
+        }
+        [HarmonyPatch(typeof(MonoBehaviourPublicObInUIgaStCSBoStcuCSUnique),"Method_Private_Void_LobbyEnter_t_PDM_1")]
+        public static class onJoinPatch{
+            public static void Postfix(MonoBehaviourPublicObInUIgaStCSBoStcuCSUnique __instance, SteamworksNative.LobbyEnter_t param_1){
+                if (__instance.IsLobbyOwner()) {
+                    return;
+                }
+                string url = SteamworksNative.SteamMatchmaking.GetLobbyData((SteamworksNative.CSteamID)param_1.m_ulSteamIDLobby, "indexUrl");
+                indexUrl = url;
+                updateIndex().Wait();
+                registerMaps();
+            }
         }
         [HarmonyPatch(typeof(MonoBehaviourPublicGamaTrmaUnique), "Method_Private_Void_0")]
         class MapUiHook
@@ -305,8 +370,24 @@ namespace MapMod
                         spinner.axis = axisVector.normalized;
                     }
                 }
-                if (go.name.Contains("checkpoint"))
-                    go.AddComponent<Checkpoint>();
+                if (go.name.Contains("checkpoint")) go.AddComponent<Checkpoint>();
+                if (go.name.Contains("snowballpile")){
+                    // the game checks distance to the object's origin but since the object is at 0,0,0 and only the vertices are offset, 
+                    // this bit of code centers the mesh back to 0,0,0 and then sets the transform to offset instead
+                    Vector3 offsetFromOrigin = mr.bounds.center;
+                    Vector3[] vertices = mf.sharedMesh.vertices;
+                    for (int i = 0; i < vertices.Length; i++){
+                        vertices[i] -= offsetFromOrigin;
+                    }
+                    mf.sharedMesh.vertices = vertices;
+                    go.transform.position = offsetFromOrigin;
+                    
+                    MonoBehaviourPublicDi2InObInObInUnique sharedObjManager = GameObject.Find("/GameManager (1)/SharedObjectManager").GetComponent<MonoBehaviourPublicDi2InObInObInUnique>();
+                    go.layer = 9; // "Interact" layer
+                    MonoBehaviour1PublicBoInSiUnique snowballScript = go.AddComponent<MonoBehaviour1PublicBoInSiUnique>();
+                    snowballScript.SetId(sharedObjManager.GetNextId());
+                    sharedObjManager.AddObject(snowballScript);
+                }
             }
             string rotValue = Plugin.tryGetValue(go.name, "rot");
             if (rotValue != null)
@@ -325,42 +406,62 @@ namespace MapMod
             }
             return true;
         }
-        public static async Task checkIndex(){
+        public static async Task updateIndex(){
+            if (indexUrl == "useLocal") {
+                currentIndexFolderPath = gameFolder + "\\Maps\\";
+                customMaps = new System.Collections.Generic.List<Map>();
+                foreach (string s in getCustomMapNames()){
+                    customMaps.Add(createMap(s));
+                }
+                return;
+            }
+            System.Uri uri = new System.Uri(indexUrl);
+            if (uri.Host != "github.com"){
+                // only allow github repos
+                return;
+            }
+            currentIndexFolderPath = gameFolder + "\\Maps\\" + indexUrl.Substring(indexUrl.LastIndexOf("github.com")).Replace("/","").Replace("\\","").Replace(".","")+"\\";
+            if (!System.IO.Directory.Exists(currentIndexFolderPath)){
+                System.IO.Directory.CreateDirectory(currentIndexFolderPath);
+            }
             string filecontent;
             HttpClient client = new HttpClient();
-            filecontent = await client.GetStringAsync(indexfileURL);
-            string localIndexPath = Application.dataPath+"\\localindex";
-            string[] newIndex = filecontent.Split("\n");
-            if (System.IO.File.Exists(localIndexPath)){
-                string[] localIndex = System.IO.File.ReadAllLines(localIndexPath);
-                for (int ID = 0; ID < localIndex.Length; ID++){
-                    string localVersionID = localIndex[ID].Split("|")[0];
-                    string newVersionID = newIndex[ID].Split("|")[0];
-                    mapsNeedUpdating.Add(localVersionID == newVersionID);
+            filecontent = await client.GetStringAsync(indexUrl+"indexfile");
+            customMaps = new System.Collections.Generic.List<Map>();
+            foreach (string line in filecontent.Split("\n")){
+                int seperatorIndex = line.IndexOf("|");
+                if (seperatorIndex < 0){
+                    continue;
                 }
-                for (int i = 0; i < newIndex.Length-localIndex.Length; i++){
-                    mapsNeedUpdating.Add(true);
+                string version = line.Substring(0,seperatorIndex);
+                string name = line.Substring(seperatorIndex+1).Trim();
+                string mapfolderPath = currentIndexFolderPath + "\\" + name + "\\";
+                if (!System.IO.Directory.Exists(mapfolderPath)){
+                    System.IO.Directory.CreateDirectory(mapfolderPath);
+                    await installMap(mapfolderPath,client,name,version);
+                } else {
+                    string installedVersion;
+                    try {
+                        installedVersion = System.IO.File.ReadAllText(mapfolderPath+"version");
+                    } catch {
+                        await installMap(mapfolderPath,client,name,version);
+                        continue;
+                    }
+                    if (installedVersion != version){
+                        await installMap(mapfolderPath,client,name,version);
+                    }
                 }
-            } else {
-                int mapCount = filecontent.Count(ch => (ch == '\n'));
-                for (int i = 0; i < mapCount; i++){
-                    mapsNeedUpdating.Add(true);
-                }
+                customMaps.Add(createMap(name));
             }
-            System.IO.File.WriteAllLines(Application.dataPath+"\\localIndex",newIndex);
         }
-        public static async Task updateMap(int ID){
-            string mapIndexEntry = System.IO.File.ReadAllLines(Application.dataPath+"\\localIndex")[ID];
-            string mapname = mapIndexEntry.Split("|")[1];
-            HttpClient client = new HttpClient();
-            System.IO.Stream mapStream = await client.GetStreamAsync(mapIndexDirectory+mapname+".zip");
-            ZipArchive zip = new ZipArchive(mapStream);
-            string mapPath = System.IO.Directory.GetParent(Application.dataPath) + "\\Maps\\" +mapname+"\\";
+        public static async Task installMap(string mapfolderPath, HttpClient client, string name, string version){
+            System.IO.Stream stream = await client.GetStreamAsync(indexUrl + "maps/" + name + ".zip");
+            ZipArchive zip = new ZipArchive(stream);
             foreach (ZipArchiveEntry entry in zip.Entries){
-                entry.ExtractToFile(mapPath+entry.Name,true);
+                entry.ExtractToFile(mapfolderPath+entry.Name, true);
             }
             zip.Dispose();
-            mapsNeedUpdating[ID] = false;
+            System.IO.File.WriteAllText(mapfolderPath+"version",version);
         }
     }
 
@@ -373,13 +474,13 @@ namespace MapMod
         [HarmonyPostfix]
         public static void getMapHook(ref Map __result,MonoBehaviourPublicObInMamaLi1plMadeMaUnique __instance, int __state) {
             if (__state > 61) {
-                string mapPath = System.IO.Directory.GetParent(Application.dataPath) + "\\Maps\\"+__result.mapName;
+                string mapPath = Plugin.currentIndexFolderPath+__result.mapName;
                 int customID = __state - 62;
-                if (Plugin.mapsNeedUpdating[customID]){
-                    Plugin.updateMap(customID).Wait();
-                }
                 if (System.IO.Directory.Exists(mapPath)) {
-                    __result = __instance.GetMap(52);
+                    Map skybox = __instance.GetMap(52);
+                    skybox.mapThumbnail = __result.mapThumbnail;
+                    skybox.name = __result.mapName;
+                    __result = skybox;
                     Plugin.loadingCustomMap = true;
                     Plugin.customMapPath = mapPath;
                 } else {
