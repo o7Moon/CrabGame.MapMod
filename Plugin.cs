@@ -189,21 +189,24 @@ namespace MapMod
                         Light light = GameObject.Find("Directional Light").GetComponent<Light>();
                         light.intensity = float.Parse(lightIntensity);
                     }
-                }
-                GameObject.Destroy(GameObject.Find("Cube"));
-                GameObject.Destroy(GameObject.Find("RoundTimer"));
-                if (System.IO.File.Exists(customMapPath + "\\sky.png")) {
-                    Texture2D skyTexture = new Texture2D(1,1);
-                    ImageConversion.LoadImage(skyTexture, System.IO.File.ReadAllBytes(customMapPath + "\\sky.png"));
-                    Material sky = RenderSettings.skybox;
-                    sky.shader = Shader.Find("Skybox/Panoramic");
-                    sky.SetTexture("Spherical",skyTexture);
-                    sky.mainTexture = skyTexture;
-                    RenderSettings.skybox = sky;
+                    string skycolor = tryGetValue(config, "skycolor");
+                    if (skycolor != null){
+                        Color skyColor = new Color();
+                        ColorUtility.TryParseHtmlString(skycolor, out skyColor);
+                        Cubemap sky = new Cubemap(1,UnityEngine.Experimental.Rendering.DefaultFormat.LDR,UnityEngine.Experimental.Rendering.TextureCreationFlags.None);
+                        for (int i = 0; i < 6; i++){
+                            sky.SetPixel((CubemapFace)i,0,0,skyColor);
+                        }
+                        sky.Apply();
+                        Material skyMaterial = new Material(Shader.Find("Skybox/Cubemap"));
+                        skyMaterial.SetTexture("_Tex",sky);
+                        RenderSettings.skybox = skyMaterial;
+                    }
                 }
                 // load map.obj, the custom OBJLoader will handle things like ladders and tires
                 bool mtlExists = System.IO.File.Exists(customMapPath+"\\map.mtl");
                 GameObject Map = new OBJLoader().Load(customMapPath+"\\map.obj",mtlExists ? customMapPath+"\\map.mtl" : null);
+                GameObject.Destroy(GameObject.Find("RoundTimer"));
             }
         }
 
@@ -216,6 +219,7 @@ namespace MapMod
             registerLoaderAction(defaultLoaderActions);
             var harmony = new Harmony("MapMod");
             harmony.PatchAll();
+            harmony.PatchAll(typeof(bepinexDetectionPatch));
             SceneManager.sceneLoaded+=(UnityAction<Scene,LoadSceneMode>)onSceneLoad;
             Log.LogInfo("MapMod is loaded!");
         }
@@ -288,6 +292,23 @@ namespace MapMod
                 }
             }
         }
+        [HarmonyPatch(typeof(MonoBehaviourPublicGaplfoGaTrorplTrRiBoUnique),"Start")]
+        public static class playerStartHook {
+            [HarmonyPostfix]
+            public static void PostFix(MonoBehaviourPublicGaplfoGaTrorplTrRiBoUnique __instance){
+                MonoBehaviourPublicCSstReshTrheObplBojuUnique steamData = __instance.GetComponent<MonoBehaviourPublicCSstReshTrheObplBojuUnique>();
+                if (SceneManager.GetActiveScene().name == "Skybox" && steamManager.IsLobbyOwner() && steamData.steamProfile == steamManager.field_Private_CSteamID_0){
+                    MonoBehaviourPublicObInGaspUnique spawnZoneManager = GameObject.Find("/SpawnZoneManager").GetComponent<MonoBehaviourPublicObInGaspUnique>();
+                    __instance.transform.position = spawnZoneManager.FindGroundedSpawnPosition(1);
+                    // since the host spawns right as the game starts this is a good spot to remove the base of the round timer object
+                    // (it seems to get added after scene load so this needs to be done on a Start rather than an Awake)
+                    GameObject obj = GameObject.Find("/Cube");
+                    if (obj != null) {
+                        GameObject.Destroy(obj);
+                    }
+                }
+            } 
+        }
         public static bool defaultLoaderActions(GameObject go, Mesh msh) {
             MeshFilter mf = go.GetComponent<MeshFilter>();
             MeshRenderer mr = go.GetComponent<MeshRenderer>();
@@ -358,7 +379,6 @@ namespace MapMod
                 if (go.name.Contains("spinner"))
                 {
                     Rigidbody rb = go.AddComponent<Rigidbody>();
-                    //rb.centerOfMass = mcol.bounds.center;
                     rb.isKinematic = true;
                     Spinner spinner = go.AddComponent<Spinner>();
                     string speedValue = Plugin.tryGetValue(go.name, "rspeed");
@@ -458,7 +478,12 @@ namespace MapMod
             System.IO.Stream stream = await client.GetStreamAsync(indexUrl + "maps/" + name + ".zip");
             ZipArchive zip = new ZipArchive(stream);
             foreach (ZipArchiveEntry entry in zip.Entries){
-                entry.ExtractToFile(mapfolderPath+entry.Name, true);
+                string path = System.IO.Path.GetFullPath(System.IO.Path.Join(mapfolderPath,entry.FullName));
+                if (entry.FullName.EndsWith("/")) {
+                    System.IO.Directory.CreateDirectory(path);
+                } else {
+                    entry.ExtractToFile(path, true);
+                }
             }
             zip.Dispose();
             System.IO.File.WriteAllText(mapfolderPath+"version",version);
@@ -517,6 +542,19 @@ namespace MapMod
                 pos.y += GetComponent<MeshCollider>().bounds.size.y;
                 spawnZone.transform.position = pos;
             }
+        }
+    }
+    // allow joining vanilla lobbies without disabling the mod
+    class bepinexDetectionPatch {
+        [HarmonyPatch(typeof(MonoBehaviourPublicGataInefObInUnique), "Method_Private_Void_GameObject_Boolean_Vector3_Quaternion_0")]
+        [HarmonyPatch(typeof(MonoBehaviourPublicCSDi2UIInstObUIloDiUnique), "Method_Private_Void_0")]
+        [HarmonyPatch(typeof(MonoBehaviourPublicVesnUnique), "Method_Private_Void_0")]
+        [HarmonyPatch(typeof(MonoBehaviourPublicObjomaOblogaTMObseprUnique), "Method_Public_Void_PDM_2")]
+        [HarmonyPatch(typeof(MonoBehaviourPublicTeplUnique), "Method_Private_Void_PDM_32")]
+        [HarmonyPrefix]
+        public static bool Prefix(System.Reflection.MethodBase __originalMethod)
+        {
+            return false;
         }
     }
 }
