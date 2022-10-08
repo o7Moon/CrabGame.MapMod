@@ -146,6 +146,7 @@ namespace MapMod
         public static bool addedGamemodeSupportedMaps = false;
         public static string customMapPath;
         public static string gameFolder;
+        public static int timeLastSentInstallLink = 0;
         // the index url to use when hosting a game. this is configured in (Game Folder/hostindex.txt)
         // if it is set to "useLocal", use Maps.txt and the maps folder instead of an index repo.
         // note that this means clients will also use their own maps
@@ -162,6 +163,15 @@ namespace MapMod
 
         public static System.Collections.Generic.List<bool> mapsNeedUpdating = new System.Collections.Generic.List<bool>();
         public static System.Collections.Generic.List<System.Func<GameObject,Mesh,bool>> mapLoaderActions = new System.Collections.Generic.List<System.Func<GameObject, Mesh, bool>>();
+        
+        public static void trySendInstallMessage(){
+            if (System.DateTimeOffset.Now.ToUnixTimeSeconds() > timeLastSentInstallLink + 30){
+                // ID 1 is server message
+                MonoBehaviourPublicInInUnique.SendChatMessage(1,"Hey, this lobby has custom maps and it seems you dont have the mod installed,");
+                MonoBehaviourPublicInInUnique.SendChatMessage(1,"join the discord for help with installation: discord.gg/ugmB4VHXNM");
+                timeLastSentInstallLink = (int)System.DateTimeOffset.Now.ToUnixTimeSeconds();
+            }
+        }
         public static void registerLoaderAction(System.Func<GameObject,Mesh,bool> action) {
             mapLoaderActions.Add(action);
         }
@@ -487,6 +497,24 @@ namespace MapMod
             }
             zip.Dispose();
             System.IO.File.WriteAllText(mapfolderPath+"version",version);
+        }
+    }
+    [HarmonyPatch(typeof(Debug),nameof(Debug.Log),new System.Type[] {typeof(Object)})]
+    class DebugLogHook {
+        public static void Prefix(ref Object message){
+            string s_message = message.ToString();
+            if (s_message.Contains("is not ready to load, but is active") || s_message.Contains("tried to interact with the game but is eliminated")){
+                Plugin.trySendInstallMessage();
+            }
+        }
+    }
+    [HarmonyPatch(typeof(MonoBehaviourPublicRaovTMinTemeColoonCoUnique), "AppendMessage")]
+    class ChatBoxHook {
+        public static bool Prefix(MonoBehaviourPublicRaovTMinTemeColoonCoUnique __instance, System.UInt64 param_1, string param_2, string param_3){
+            if (param_1 == 1 && (param_2.Contains("Hey, this lobby has custom maps and it seems you dont have the mod installed,") || param_2.Contains("join the discord for help with installation: discord.gg/ugmB4VHXNM"))){
+                return false;
+            }
+            return true;
         }
     }
 
