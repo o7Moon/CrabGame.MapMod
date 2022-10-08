@@ -168,7 +168,7 @@ namespace MapMod
             if (System.DateTimeOffset.Now.ToUnixTimeSeconds() > timeLastSentInstallLink + 30){
                 // ID 1 is server message
                 MonoBehaviourPublicInInUnique.SendChatMessage(1,"Hey, this lobby has custom maps and it seems you dont have the mod installed,");
-                MonoBehaviourPublicInInUnique.SendChatMessage(1,"join the discord for help with installation: discord.gg/ugmB4VHXNM");
+                MonoBehaviourPublicInInUnique.SendChatMessage(1,"join the discord for help with installation: discord.gg/SXGHaN8Geb");
                 timeLastSentInstallLink = (int)System.DateTimeOffset.Now.ToUnixTimeSeconds();
             }
         }
@@ -511,7 +511,7 @@ namespace MapMod
     [HarmonyPatch(typeof(MonoBehaviourPublicRaovTMinTemeColoonCoUnique), "AppendMessage")]
     class ChatBoxHook {
         public static bool Prefix(MonoBehaviourPublicRaovTMinTemeColoonCoUnique __instance, System.UInt64 param_1, string param_2, string param_3){
-            if (param_1 == 1 && (param_2.Contains("Hey, this lobby has custom maps and it seems you dont have the mod installed,") || param_2.Contains("join the discord for help with installation: discord.gg/ugmB4VHXNM"))){
+            if (param_1 == 1 && (param_2.Contains("Hey, this lobby has custom maps and it seems you dont have the mod installed,") || param_2.Contains("join the discord for help with installation: discord.gg/SXGHaN8Geb"))){
                 return false;
             }
             return true;
