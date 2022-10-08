@@ -38,6 +38,9 @@
     <Reference Include="UnityEngine.UIModule">
       <HintPath>..\Bepinex\unhollowed\UnityEngine.UIModule.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>..\Bepinex\unhollowed\Unity.TextMeshPro.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
       <HintPath>..\Assemblies\UnityEngine.ImageConversionModule.dll</HintPath>
     </Reference>

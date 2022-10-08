@@ -145,6 +145,7 @@ namespace MapMod
         public static bool gameLoaded = false;
         public static bool addedGamemodeSupportedMaps = false;
         public static string customMapPath;
+        public static string customMapName;
         public static string gameFolder;
         public static int timeLastSentInstallLink = 0;
         // the index url to use when hosting a game. this is configured in (Game Folder/hostindex.txt)
@@ -197,7 +198,11 @@ namespace MapMod
                     string lightIntensity = tryGetValue(config, "lightingIntensity");
                     if (lightIntensity != null) {
                         Light light = GameObject.Find("Directional Light").GetComponent<Light>();
-                        light.intensity = float.Parse(lightIntensity);
+                        try {
+                            light.intensity = float.Parse(lightIntensity);
+                        } catch (System.Exception e){
+                            instance.Log.LogInfo(e);
+                        }
                     }
                     string skycolor = tryGetValue(config, "skycolor");
                     if (skycolor != null){
@@ -501,11 +506,13 @@ namespace MapMod
     }
     [HarmonyPatch(typeof(Debug),nameof(Debug.Log),new System.Type[] {typeof(Object)})]
     class DebugLogHook {
-        public static void Prefix(ref Object message){
+        public static bool Prefix(ref Object message){
             string s_message = message.ToString();
             if (s_message.Contains("is not ready to load, but is active") || s_message.Contains("tried to interact with the game but is eliminated")){
                 Plugin.trySendInstallMessage();
+                return false;
             }
+            return true;
         }
     }
     [HarmonyPatch(typeof(MonoBehaviourPublicRaovTMinTemeColoonCoUnique), "AppendMessage")]
@@ -515,6 +522,14 @@ namespace MapMod
                 return false;
             }
             return true;
+        }
+    }
+    [HarmonyPatch(typeof(MonoBehaviourPublicTeprUIObUIBotiRabamaUnique),"Start")]
+    class LoadingScreenPatch {
+        public static void Postfix(MonoBehaviourPublicTeprUIObUIBotiRabamaUnique __instance){
+            if (Plugin.loadingCustomMap){
+                __instance.mapName.text = Plugin.customMapName;
+            }
         }
     }
 
@@ -532,7 +547,8 @@ namespace MapMod
                 if (System.IO.Directory.Exists(mapPath)) {
                     Map skybox = __instance.GetMap(52);
                     skybox.mapThumbnail = __result.mapThumbnail;
-                    skybox.name = __result.mapName;
+                    //skybox.name = __result.mapName;
+                    Plugin.customMapName = __result.mapName;
                     __result = skybox;
                     Plugin.loadingCustomMap = true;
                     Plugin.customMapPath = mapPath;
