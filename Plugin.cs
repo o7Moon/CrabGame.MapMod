@@ -121,9 +121,9 @@ namespace MapMod
         }
         public static Vector3 parseVector(string text) {
             string[] array = text.Split(",");
-            if (array.Length == 3) {
+            try {
                 return new Vector3(float.Parse(array[0]), float.Parse(array[1]), float.Parse(array[2]));
-            } else { return new Vector3(0,1,0); }
+            } catch { return new Vector3(0,1,0); }
         }
         public static string[] getCustomMapNames() {
             // this is only used when the index is set to "useLocal"
@@ -374,8 +374,11 @@ namespace MapMod
                     tireScript.field_Private_Single_0 = 0.25f;
                     tireScript.pushForce = 35;
                     string forceValue = Plugin.tryGetValue(go.name, "tforce");
-                    if (forceValue != null)
-                        tireScript.pushForce = int.Parse(forceValue);
+                    if (forceValue != null){
+                        try {
+                            tireScript.pushForce = int.Parse(forceValue);
+                        } catch {}
+                    }
                 }
                 if (go.name.Contains("boom"))
                 {
@@ -385,11 +388,17 @@ namespace MapMod
                     script.field_Private_Boolean_0 = true;
                     script.cooldown = 0.5f;
                     string forceValue = Plugin.tryGetValue(go.name, "bforce");
-                    if (forceValue != null)
-                        script.force = int.Parse(forceValue);
+                    if (forceValue != null){
+                        try {
+                            script.force = int.Parse(forceValue);
+                        } catch {}
+                    }
                     string upForceValue = Plugin.tryGetValue(go.name, "upforce");
-                    if (upForceValue != null)
-                        script.upForce = int.Parse(upForceValue);
+                    if (upForceValue != null){
+                        try {
+                            script.upForce = int.Parse(upForceValue);
+                        } catch {}
+                    }
                 }
                 if (go.name.Contains("spinner"))
                 {
@@ -397,8 +406,11 @@ namespace MapMod
                     rb.isKinematic = true;
                     Spinner spinner = go.AddComponent<Spinner>();
                     string speedValue = Plugin.tryGetValue(go.name, "rspeed");
-                    if (speedValue != null)
-                        spinner.speed = float.Parse(speedValue);
+                    if (speedValue != null) {
+                        try {
+                            spinner.speed = float.Parse(speedValue);
+                        } catch {}
+                    }
                     string axisValue = Plugin.tryGetValue(go.name, "raxis");
                     if (axisValue != null) {
                         Vector3 axisVector = parseVector(axisValue);
@@ -425,8 +437,11 @@ namespace MapMod
                 }
             }
             string rotValue = Plugin.tryGetValue(go.name, "rot");
-            if (rotValue != null)
-                go.transform.RotateAround(mr.bounds.center, Vector3.up, int.Parse(rotValue));
+            if (rotValue != null){
+                try {
+                    go.transform.RotateAround(mr.bounds.center, Vector3.up, int.Parse(rotValue));
+                } catch {}
+            }
             if (go.name.Contains("safezone"))
             {
                 MonoBehaviourPublicLi1ObsaInObUnique script1 = go.AddComponent<MonoBehaviourPublicLi1ObsaInObUnique>();
@@ -442,6 +457,7 @@ namespace MapMod
             return true;
         }
         public static async Task updateIndex(){
+            instance.Log.LogInfo("updating index: " + indexUrl);
             if (indexUrl == "useLocal") {
                 currentIndexFolderPath = gameFolder + "\\Maps\\";
                 customMaps = new System.Collections.Generic.List<Map>();
@@ -490,6 +506,7 @@ namespace MapMod
             }
         }
         public static async Task installMap(string mapfolderPath, HttpClient client, string name, string version){
+            instance.Log.LogInfo("installing map: " + mapfolderPath + " " + name + " " +version);
             System.IO.Stream stream = await client.GetStreamAsync(indexUrl + "maps/" + name + ".zip");
             ZipArchive zip = new ZipArchive(stream);
             foreach (ZipArchiveEntry entry in zip.Entries){
