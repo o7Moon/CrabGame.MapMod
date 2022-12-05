@@ -27,6 +27,10 @@ namespace MapMod
             string hostindexConfigPath = gameFolder+"\\hostindex.txt";
             if (File.Exists(hostindexConfigPath)){
                 hostIndex = File.ReadAllText(hostindexConfigPath).Trim();
+                // make sure there is actually a path seperator at the end of the index link
+                if (!hostIndex.EndsWith("/")){
+                    hostIndex += "/";
+                }
             } else {
                 File.WriteAllText(hostindexConfigPath,"useLocal");
             }
