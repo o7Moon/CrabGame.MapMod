@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.IL2CPP;
+using BepInEx.Configuration;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Events;
@@ -37,7 +38,9 @@ namespace MapMod
             defaultMaps = mapManager.maps.ToList();
             updateIndex().Wait();
             registerMaps();
-            mapManager.playableMaps = new Il2CppSystem.Collections.Generic.List<Map>();
+            if (deselectAllMaps.Value){
+                mapManager.playableMaps = new Il2CppSystem.Collections.Generic.List<Map>();
+            }
         }
         public static void registerMaps(){
             var mapList = new System.Collections.Generic.List<Map>(defaultMaps);
@@ -71,6 +74,9 @@ namespace MapMod
                     } else {
                         m.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.any;
                     }
+                    if (config.Contains("lobbymap")){
+                        mapManager.defaultMap = m;
+                    }
                 }
                 mapnum ++;
                 mapList.Add(m);
@@ -80,6 +86,9 @@ namespace MapMod
                 // and never reset them.
                 if (!addedGamemodeSupportedMaps){
                     registerGamemodeSupportedMap(m);
+                }
+                if (selectCustomMaps.Value){
+                    mapManager.playableMaps.Add(m);
                 }
             }
             mapManager.maps = mapList.ToArray();
@@ -169,7 +178,7 @@ namespace MapMod
             if (System.DateTimeOffset.Now.ToUnixTimeSeconds() > timeLastSentInstallLink + 30){
                 // ID 1 is server message
                 MonoBehaviourPublicInInUnique.SendChatMessage(1,"Hey, this lobby has custom maps and it seems you dont have the mod installed,");
-                MonoBehaviourPublicInInUnique.SendChatMessage(1,"join the discord for help with installation: discord.gg/SXGHaN8Geb");
+                MonoBehaviourPublicInInUnique.SendChatMessage(1,"join the discord for help with installation: "+discordLink.Value);
                 timeLastSentInstallLink = (int)System.DateTimeOffset.Now.ToUnixTimeSeconds();
             }
         }
@@ -241,6 +250,7 @@ namespace MapMod
                 return;
             }
             instance = this;
+            LoadConfig();
             ClassInjector.RegisterTypeInIl2Cpp<Spinner>();
             ClassInjector.RegisterTypeInIl2Cpp<Checkpoint>();
             registerLoaderAction(defaultLoaderActions);
@@ -250,6 +260,17 @@ namespace MapMod
             SceneManager.sceneLoaded+=(UnityAction<Scene,LoadSceneMode>)onSceneLoad;
             Log.LogInfo("MapMod is loaded!");
         }
+        public static ConfigEntry<bool> deselectAllMaps;
+        public static ConfigEntry<bool> selectCustomMaps;
+        public static ConfigEntry<string> discordLink;
+        public static ConfigEntry<bool> sendInstallInstructions;
+        public static void LoadConfig(){
+            deselectAllMaps = instance.Config.Bind<bool>("Host Options","deselectAll",true,"deselect all the maps in the lobby creation menu by default so individual ones can be selected quicker.");
+            selectCustomMaps = instance.Config.Bind<bool>("Host Options","selectCustom",true,"select custom maps automatically in the lobby creation menu. (if deselectAll is false)");
+            discordLink = instance.Config.Bind<string>("Host Options","discordLink","discord.gg/NEfJW2Cff3","when vanilla players join and are unable to load into custom maps, they are send this discord link for info and help with installing the mod. by default this points to the #how-to-install-mapmod channel in the modding discord but you can set it to whatever you want.");
+            sendInstallInstructions = instance.Config.Bind<bool>("Host Options","sendInstallInstructions",true,"if false, completely disable the installation instructions getting sent to vanilla players.");
+        }
+
         [HarmonyPatch(typeof(SteamworksNative.SteamMatchmaking))]
         [HarmonyPatch(nameof(SteamworksNative.SteamMatchmaking.SetLobbyData))]
         static class SetLobbyDataPatch {
@@ -536,6 +557,7 @@ namespace MapMod
     [HarmonyPatch(typeof(Debug),nameof(Debug.Log),new System.Type[] {typeof(Object)})]
     class DebugLogHook {
         public static bool Prefix(ref Object message){
+            if (!Plugin.sendInstallInstructions.Value) return true;
             string s_message = message.ToString();
             if (s_message.Contains("is not ready to load, but is active") || s_message.Contains("tried to interact with the game but is eliminated")){
                 Plugin.trySendInstallMessage();
@@ -547,7 +569,7 @@ namespace MapMod
     [HarmonyPatch(typeof(MonoBehaviourPublicRaovTMinTemeColoonCoUnique), "AppendMessage")]
     class ChatBoxHook {
         public static bool Prefix(MonoBehaviourPublicRaovTMinTemeColoonCoUnique __instance, System.UInt64 param_1, string param_2, string param_3){
-            if (param_1 == 1 && (param_2.Contains("Hey, this lobby has custom maps and it seems you dont have the mod installed,") || param_2.Contains("join the discord for help with installation: discord.gg/SXGHaN8Geb"))){
+            if (param_1 == 1 && (param_2.Contains("this lobby has custom maps and it seems you dont have the mod installed") || param_2.Contains("join the discord for help with installation"))){
                 return false;
             }
             return true;
