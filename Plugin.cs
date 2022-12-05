@@ -461,6 +461,8 @@ namespace MapMod
                     }
                     mf.sharedMesh.vertices = vertices;
                     go.transform.position = offsetFromOrigin;
+                    // make sure the bounds are updated so that culling uses the new position rather than the old one, causing the mesh to incorrectly go invisible sometimes
+                    mf.sharedMesh.RecalculateBounds();
                     
                     MonoBehaviourPublicDi2InObInObInUnique sharedObjManager = GameObject.Find("/GameManager (1)/SharedObjectManager").GetComponent<MonoBehaviourPublicDi2InObInObInUnique>();
                     go.layer = 9; // "Interact" layer
