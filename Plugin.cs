@@ -474,6 +474,25 @@ namespace MapMod
                     snowballScript.SetId(sharedObjManager.GetNextId());
                     sharedObjManager.AddObject(snowballScript);
                 }
+                if (go.name.Contains("lobbybutton")){
+                    // the game checks distance to the object's origin but since the object is at 0,0,0 and only the vertices are offset, 
+                    // this bit of code centers the mesh back to 0,0,0 and then sets the transform to offset instead
+                    Vector3 offsetFromOrigin = mr.bounds.center;
+                    Vector3[] vertices = mf.sharedMesh.vertices;
+                    for (int i = 0; i < vertices.Length; i++){
+                        vertices[i] -= offsetFromOrigin;
+                    }
+                    mf.sharedMesh.vertices = vertices;
+                    go.transform.position = offsetFromOrigin;
+                    // make sure the bounds are updated so that culling uses the new position rather than the old one, causing the mesh to incorrectly go invisible sometimes
+                    mf.sharedMesh.RecalculateBounds();
+
+                    MonoBehaviourPublicDi2InObInObInUnique sharedObjManager = GameObject.Find("/GameManager (1)/SharedObjectManager").GetComponent<MonoBehaviourPublicDi2InObInObInUnique>();
+                    go.layer = 9; // "Interact" layer
+                    MonoBehaviour1PublicTrbuObreunObBoVeVeVeUnique buttonScript = go.AddComponent<MonoBehaviour1PublicTrbuObreunObBoVeVeVeUnique>();
+                    buttonScript.SetId(sharedObjManager.GetNextId());
+                    sharedObjManager.AddObject(buttonScript);
+                }
             }
             string rotValue = Plugin.tryGetValue(go.name, "rot");
             if (rotValue != null){
