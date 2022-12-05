@@ -15,7 +15,7 @@ using System.IO;
 
 namespace MapMod
 {
-    [BepInPlugin("CrabGameMapMod", "MapMod", "0.6")]
+    [BepInPlugin("CrabGameMapMod", "MapMod", "0.7")]
     public class Plugin : BasePlugin
     {
         public static void Setup(){
