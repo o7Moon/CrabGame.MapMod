@@ -228,6 +228,18 @@ namespace MapMod
         public static Plugin instance;
         public override void Load()
         {
+            string[] args = System.Environment.GetCommandLineArgs();
+            if (args.Contains("--disable-mapmod")){
+                var harmonyPatcher = new Harmony("disabled mapmod harmony");
+                // in the very rare case of multiple sandboxed instances of the game running,
+                // it may be desired to have all instances running from the same game folder
+                // but only enable mapmod on some of them.
+                // that is what this is for 
+                // (bepinex detection needs to be disabled for that instance to run properly
+                // so the mod still loads but only to patch out the detection)
+                harmonyPatcher.PatchAll(typeof(bepinexDetectionPatch));
+                return;
+            }
             instance = this;
             ClassInjector.RegisterTypeInIl2Cpp<Spinner>();
             ClassInjector.RegisterTypeInIl2Cpp<Checkpoint>();
