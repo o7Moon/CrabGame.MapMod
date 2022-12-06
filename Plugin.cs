@@ -241,8 +241,7 @@ namespace MapMod
         public static Plugin instance;
         public override void Load()
         {
-            string[] args = System.Environment.GetCommandLineArgs();
-            if (args.Contains("--disable-mapmod")){
+            if (Il2CppSystem.Environment.GetEnvironmentVariable("MAPMOD_DISABLED") == "1"){
                 var harmonyPatcher = new Harmony("disabled mapmod harmony");
                 // in the very rare case of multiple sandboxed instances of the game running,
                 // it may be desired to have all instances running from the same game folder
