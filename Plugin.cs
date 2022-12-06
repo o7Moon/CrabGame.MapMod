@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System.IO.Compression;
 using System.IO;
+using ServerSend = MonoBehaviourPublicInInUnique;
 
 namespace MapMod
 {
@@ -154,6 +155,8 @@ namespace MapMod
             return map;
         }
         public static bool loadingCustomMap = false;
+        public static bool currentlyPlayingCustomMap = false;
+        public static int lastCustomMapID = -1;
         public static bool allObjectsTextured = false;
         public static bool gameLoaded = false;
         public static bool addedGamemodeSupportedMaps = false;
@@ -194,9 +197,12 @@ namespace MapMod
                 gameLoaded = true;
                 Setup();
             }
+            currentlyPlayingCustomMap = false;
             // once we load a scene, if this load was caused by pressing a custom map button then delete the default map and add our own
             if (loadingCustomMap && scene.name != "LoadingScreen") {
                 loadingCustomMap = false;
+                currentlyPlayingCustomMap = true;
+                GameObject.Find("/Managers").GetComponent<MonoBehaviourPublicCSDi2UIInstObUIloDiUnique>().map = mapManager.maps[lastCustomMapID];
                 // make spawning consistent
                 GameObject.Find("/SpawnZoneManager").transform.GetChild(0).GetComponent<MonoBehaviourPublicVesiUnique>().size = new Vector3(2,2,2);
                 GameObject.Destroy(GameObject.Find("/Map"));
@@ -618,7 +624,6 @@ namespace MapMod
         public static void getMapHook(ref Map __result,MonoBehaviourPublicObInMamaLi1plMadeMaUnique __instance, int __state) {
             if (__state > 61) {
                 string mapPath = Plugin.currentIndexFolderPath+__result.mapName;
-                int customID = __state - 62;
                 if (System.IO.Directory.Exists(mapPath)) {
                     Map skybox = __instance.GetMap(52);
                     skybox.mapThumbnail = __result.mapThumbnail;
@@ -627,6 +632,7 @@ namespace MapMod
                     __result = skybox;
                     Plugin.loadingCustomMap = true;
                     Plugin.customMapPath = mapPath;
+                    Plugin.lastCustomMapID = __state;
                 } else {
                     __result = __instance.GetMap(14); // return the karlson map as a backup
                 }
