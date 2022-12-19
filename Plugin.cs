@@ -357,8 +357,9 @@ namespace MapMod
                 if (SceneManager.GetActiveScene().name == "Skybox" && steamManager.IsLobbyOwner() && steamData.steamProfile == steamManager.field_Private_CSteamID_0){
                     MonoBehaviourPublicObInGaspUnique spawnZoneManager = GameObject.Find("/SpawnZoneManager").GetComponent<MonoBehaviourPublicObInGaspUnique>();
                     __instance.transform.position = spawnZoneManager.FindGroundedSpawnPosition(1);
-                    // since the host spawns right as the game starts this is a good spot to remove the base of the round timer object
-                    // (it seems to get added after scene load so this needs to be done on a Start rather than an Awake)
+                }
+                if (SceneManager.GetActiveScene().name == "Skybox"){
+                    // delete this bit of the scoreboard object
                     GameObject obj = GameObject.Find("/Cube");
                     if (obj != null) {
                         GameObject.Destroy(obj);
@@ -582,6 +583,21 @@ namespace MapMod
             }
             zip.Dispose();
             System.IO.File.WriteAllText(mapfolderPath+"version",version);
+        }
+    }
+    [HarmonyPatch(typeof(SceneManager),nameof(SceneManager.LoadScene), new System.Type[]{typeof(string)})]
+    class SceneLoadHook {
+        public static void Prefix(ref string sceneName){
+            for (int i = 62; i < Plugin.mapManager.maps.Length; i++){
+                // if, for some reason, the game is trying to load a scene of a custom map instead of
+                // skybox, catch it and load skybox instead (because there is no scene for custom maps).
+                if (Plugin.mapManager.maps[i].name == sceneName){
+                    sceneName = "Skybox";
+                    // should trigger a custom map load
+                    Plugin.mapManager.GetMap(i);
+                    return;
+                }
+            }
         }
     }
     [HarmonyPatch(typeof(Debug),nameof(Debug.Log),new System.Type[] {typeof(Object)})]
