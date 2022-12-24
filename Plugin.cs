@@ -29,7 +29,7 @@ namespace MapMod
             if (File.Exists(hostindexConfigPath)){
                 hostIndex = File.ReadAllText(hostindexConfigPath).Trim();
                 // make sure there is actually a path seperator at the end of the index link
-                if (!hostIndex.EndsWith("/")){
+                if (hostIndex != "useLocal" && !hostIndex.EndsWith("/")){
                     hostIndex += "/";
                 }
             } else {
