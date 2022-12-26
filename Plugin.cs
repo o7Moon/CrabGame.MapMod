@@ -42,10 +42,10 @@ namespace MapMod
             gamemodeManager = GameObject.Find("/Managers/Map&GameModes").GetComponent<MonoBehaviourPublicGadealGaLi1pralObInUnique>();
             defaultMaps = mapManager.maps.ToList();
             updateIndex().Wait();
-            registerMaps();
             if (deselectAllMaps.Value){
                 mapManager.playableMaps = new Il2CppSystem.Collections.Generic.List<Map>();
             }
+            registerMaps();
         }
         public static void registerMaps(){
             var mapList = new System.Collections.Generic.List<Map>(defaultMaps);
@@ -274,8 +274,8 @@ namespace MapMod
         public static ConfigEntry<string> discordLink;
         public static ConfigEntry<bool> sendInstallInstructions;
         public static void LoadConfig(){
-            deselectAllMaps = instance.Config.Bind<bool>("Host Options","deselectAll",true,"deselect all the maps in the lobby creation menu by default so individual ones can be selected quicker.");
-            selectCustomMaps = instance.Config.Bind<bool>("Host Options","selectCustom",true,"select custom maps automatically in the lobby creation menu. (if deselectAll is false)");
+            deselectAllMaps = instance.Config.Bind<bool>("Host Options","deselectVanilla",true,"deselect vanilla maps in the lobby creation menu by default.");
+            selectCustomMaps = instance.Config.Bind<bool>("Host Options","selectCustom",true,"select custom maps automatically in the lobby creation menu.");
             discordLink = instance.Config.Bind<string>("Host Options","discordLink","discord.gg/NEfJW2Cff3","when vanilla players join and are unable to load into custom maps, they are send this discord link for info and help with installing the mod. by default this points to the #how-to-install-mapmod channel in the modding discord but you can set it to whatever you want.");
             sendInstallInstructions = instance.Config.Bind<bool>("Host Options","sendInstallInstructions",true,"if false, completely disable the installation instructions getting sent to vanilla players.");
         }
