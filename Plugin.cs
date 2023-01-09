@@ -202,7 +202,9 @@ namespace MapMod
             if (loadingCustomMap && scene.name != "LoadingScreen") {
                 loadingCustomMap = false;
                 currentlyPlayingCustomMap = true;
-                GameObject.Find("/Managers").GetComponent<MonoBehaviourPublicCSDi2UIInstObUIloDiUnique>().map = mapManager.maps[lastCustomMapID];
+                if (lastCustomMapID != -1){
+                    GameObject.Find("/Managers").GetComponent<MonoBehaviourPublicCSDi2UIInstObUIloDiUnique>().map = mapManager.maps[lastCustomMapID];
+                }
                 // make spawning consistent
                 GameObject.Find("/SpawnZoneManager").transform.GetChild(0).GetComponent<MonoBehaviourPublicVesiUnique>().size = new Vector3(2,2,2);
                 GameObject.Destroy(GameObject.Find("/Map"));
