@@ -79,9 +79,6 @@ namespace MapMod
                     } else {
                         m.mapSize = Map.EnumNPublicSealedvasmmelaan5vUnique.any;
                     }
-                    if (config.Contains("lobbymap")){
-                        mapManager.defaultMap = m;
-                    }
                 }
                 mapnum ++;
                 mapList.Add(m);
@@ -154,6 +151,9 @@ namespace MapMod
             map.mapName = name;
             return map;
         }
+
+        // im a dumbass so ill just add a variable for the dorm thing :thumbs_up:
+        public static Map dormMap;
         public static bool loadingCustomMap = false;
         public static bool currentlyPlayingCustomMap = false;
         public static int lastCustomMapID = -1;
@@ -289,6 +289,25 @@ namespace MapMod
                 // add in our own lobby data whenever the version gets set (which happens once when creating a lobby)
                 if (pchKey == "Version"){
                     SteamworksNative.SteamMatchmaking.SetLobbyData(steamIDLobby, "indexUrl", hostIndex);
+
+                    if (!dormMap)
+                        dormMap = mapManager.defaultMap;
+
+                    if (mapManager.defaultMap.mapName != dormMap.mapName)
+                        mapManager.defaultMap = dormMap;
+
+                    foreach(Map customMap in mapManager.playableMaps)
+                    {
+                        string mapfolder = currentIndexFolderPath + customMap.name;
+
+                        if (!System.IO.File.Exists(mapfolder+"\\map.config"))
+                            continue;
+
+                        string config = System.IO.File.ReadAllText(mapfolder+"\\map.config");
+
+                        if (config.Contains("lobbymap"))
+                            mapManager.defaultMap = customMap;
+                    }
                 }
             }
         }
