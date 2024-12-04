@@ -134,7 +134,7 @@ namespace MapMod
         public static Vector3 parseVector(string text) {
             string[] array = text.Split(",");
             try {
-                return new Vector3(float.Parse(array[0], new CultureInfo("en_US")), float.Parse(array[1], new CultureInfo("en_US")), float.Parse(array[2], new CultureInfo("en_US")));
+                return new Vector3(float.Parse(array[0], CultureInfo.InvariantCulture), float.Parse(array[1], CultureInfo.InvariantCulture), float.Parse(array[2], CultureInfo.InvariantCulture));
             } catch (System.Exception e) { 
                 Plugin.instance.Log.LogInfo($"vector value of {text} parsing failed, threw {e}");
                 return new Vector3(0,1,0); 
@@ -444,7 +444,7 @@ namespace MapMod
                     string forceValue = Plugin.tryGetValue(go.name, "tforce");
                     if (forceValue != null){
                         try {
-                            tireScript.pushForce = int.Parse(forceValue, new CultureInfo("en_US"));
+                            tireScript.pushForce = int.Parse(forceValue, CultureInfo.InvariantCulture);
                         } catch (System.Exception e) {
                             Plugin.instance.Log.LogInfo($"tforce value of {forceValue} parsing failed, threw {e}");
                         }
@@ -460,7 +460,7 @@ namespace MapMod
                     string forceValue = Plugin.tryGetValue(go.name, "bforce");
                     if (forceValue != null){
                         try {
-                            script.force = int.Parse(forceValue, new CultureInfo("en_US"));
+                            script.force = int.Parse(forceValue, CultureInfo.InvariantCulture);
                         } catch (System.Exception e) {
                             Plugin.instance.Log.LogInfo($"bforce value of {forceValue} parsing failed, threw {e}");
                         }
@@ -468,7 +468,7 @@ namespace MapMod
                     string upForceValue = Plugin.tryGetValue(go.name, "upforce");
                     if (upForceValue != null){
                         try {
-                            script.upForce = int.Parse(upForceValue, new CultureInfo("en_US"));
+                            script.upForce = int.Parse(upForceValue, CultureInfo.InvariantCulture);
                         } catch (System.Exception e) {
                             Plugin.instance.Log.LogInfo($"upforce value of {upForceValue} parsing failed, threw {e}");
                         }
@@ -482,7 +482,7 @@ namespace MapMod
                     string speedValue = Plugin.tryGetValue(go.name, "rspeed");
                     if (speedValue != null) {
                         try {
-                            spinner.speed = float.Parse(speedValue, new CultureInfo("en_US"));
+                            spinner.speed = float.Parse(speedValue, CultureInfo.InvariantCulture);
                         } catch (System.Exception e) {
                             Plugin.instance.Log.LogInfo($"rspeed value of {speedValue} parsing failed, threw {e}");
                         }
@@ -536,7 +536,7 @@ namespace MapMod
             string rotValue = Plugin.tryGetValue(go.name, "rot");
             if (rotValue != null){
                 try {
-                    go.transform.RotateAround(mr.bounds.center, Vector3.up, int.Parse(rotValue, new CultureInfo("en_US")));
+                    go.transform.RotateAround(mr.bounds.center, Vector3.up, int.Parse(rotValue, CultureInfo.InvariantCulture));
                 } catch (System.Exception e) {
                     Plugin.instance.Log.LogInfo($"rot value of {rotValue} parsing failed, threw {e}");
                 }
