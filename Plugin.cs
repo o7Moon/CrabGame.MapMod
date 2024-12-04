@@ -13,6 +13,8 @@ using System.Net.Http;
 using System.IO.Compression;
 using System.IO;
 using ServerSend = MonoBehaviourPublicInInUnique;
+using System.Globalization;
+using System;
 
 namespace MapMod
 {
@@ -133,8 +135,11 @@ namespace MapMod
         public static Vector3 parseVector(string text) {
             string[] array = text.Split(",");
             try {
-                return new Vector3(float.Parse(array[0]), float.Parse(array[1]), float.Parse(array[2]));
-            } catch { return new Vector3(0,1,0); }
+                return new Vector3(float.Parse(array[0], new CultureInfo("en_US")), float.Parse(array[1], new CultureInfo("en_US")), float.Parse(array[2], new CultureInfo("en_US")));
+            } catch (System.Exception e) { 
+                Plugin.instance.Log.LogInfo($"vector value of {text} parsing failed, threw {e}");
+                return new Vector3(0,1,0); 
+            }
         }
         public static string[] getCustomMapNames() {
             // this is only used when the index is set to "useLocal"
@@ -440,8 +445,10 @@ namespace MapMod
                     string forceValue = Plugin.tryGetValue(go.name, "tforce");
                     if (forceValue != null){
                         try {
-                            tireScript.pushForce = int.Parse(forceValue);
-                        } catch {}
+                            tireScript.pushForce = int.Parse(forceValue, new CultureInfo("en_US"));
+                        } catch (System.Exception e) {
+                            Plugin.instance.Log.LogInfo($"tforce value of {forceValue} parsing failed, threw {e}");
+                        }
                     }
                 }
                 if (go.name.Contains("boom"))
@@ -454,14 +461,18 @@ namespace MapMod
                     string forceValue = Plugin.tryGetValue(go.name, "bforce");
                     if (forceValue != null){
                         try {
-                            script.force = int.Parse(forceValue);
-                        } catch {}
+                            script.force = int.Parse(forceValue, new CultureInfo("en_US"));
+                        } catch (System.Exception e) {
+                            Plugin.instance.Log.LogInfo($"bforce value of {forceValue} parsing failed, threw {e}");
+                        }
                     }
                     string upForceValue = Plugin.tryGetValue(go.name, "upforce");
                     if (upForceValue != null){
                         try {
-                            script.upForce = int.Parse(upForceValue);
-                        } catch {}
+                            script.upForce = int.Parse(upForceValue, new CultureInfo("en_US"));
+                        } catch (System.Exception e) {
+                            Plugin.instance.Log.LogInfo($"upforce value of {upForceValue} parsing failed, threw {e}");
+                        }
                     }
                 }
                 if (go.name.Contains("spinner"))
@@ -472,8 +483,10 @@ namespace MapMod
                     string speedValue = Plugin.tryGetValue(go.name, "rspeed");
                     if (speedValue != null) {
                         try {
-                            spinner.speed = float.Parse(speedValue);
-                        } catch {}
+                            spinner.speed = float.Parse(speedValue, new CultureInfo("en_US"));
+                        } catch (System.Exception e) {
+                            Plugin.instance.Log.LogInfo($"rspeed value of {speedValue} parsing failed, threw {e}");
+                        }
                     }
                     string axisValue = Plugin.tryGetValue(go.name, "raxis");
                     if (axisValue != null) {
@@ -524,8 +537,10 @@ namespace MapMod
             string rotValue = Plugin.tryGetValue(go.name, "rot");
             if (rotValue != null){
                 try {
-                    go.transform.RotateAround(mr.bounds.center, Vector3.up, int.Parse(rotValue));
-                } catch {}
+                    go.transform.RotateAround(mr.bounds.center, Vector3.up, int.Parse(rotValue, new CultureInfo("en_US")));
+                } catch (System.Exception e) {
+                    Plugin.instance.Log.LogInfo($"rot value of {rotValue} parsing failed, threw {e}");
+                }
             }
             if (go.name.Contains("safezone"))
             {
