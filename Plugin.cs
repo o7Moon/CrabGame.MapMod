@@ -162,6 +162,7 @@ namespace MapMod
         public static bool currentlyPlayingCustomMap = false;
         public static int lastCustomMapID = -1;
         public static bool allObjectsTextured = false;
+        public static bool globalPointFiltering = false;
         public static bool gameLoaded = false;
         public static bool addedGamemodeSupportedMaps = false;
         public static string customMapPath;
@@ -218,8 +219,11 @@ namespace MapMod
                 {
                     string config = System.IO.File.ReadAllText(mapConfigPath);
                     allObjectsTextured = false;
+                    globalPointFiltering = false;
                     if (config.Contains("allObjectsTextured"))
                         allObjectsTextured = true;
+                    if (config.Contains("globalPointFiltering"))
+                        globalPointFiltering = true; 
                     string lightIntensity = tryGetValue(config, "lightingIntensity");
                     if (lightIntensity != null) {
                         Light light = GameObject.Find("Directional Light").GetComponent<Light>();
@@ -395,7 +399,7 @@ namespace MapMod
         public static bool defaultLoaderActions(GameObject go, Mesh msh) {
             MeshFilter mf = go.GetComponent<MeshFilter>();
             MeshRenderer mr = go.GetComponent<MeshRenderer>();
-            if (go.name.Contains("pixel")) {
+            if (go.name.Contains("pixel") || globalPointFiltering) {
                 mr.material.mainTexture.filterMode = FilterMode.Point;
             }
             if (go.name.Contains("spawnzone"))
